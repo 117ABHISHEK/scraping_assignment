@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
 from .base_scraper import build_session, fetch_html
+
+logger = logging.getLogger("scraper")
 
 BOOKS_URL = "https://books.toscrape.com/"
 
@@ -15,9 +18,14 @@ def collect_books(base_url: str = BOOKS_URL, session=None):
     next_page = base_url
 
     while next_page:
-        response = fetch_html(next_page, session=active_session, delay=0.5)
-        response.raise_for_status()
+        try:
+            response = fetch_html(next_page, session=active_session, delay=0.5)
+            response.raise_for_status()
+        except Exception:
+            logger.exception("Failed request for books page %s", next_page)
+            break
 
+        logger.info("Fetched books page %s", next_page)
         soup = BeautifulSoup(response.text, "lxml")
         cards = soup.select("article.product_pod")
 
