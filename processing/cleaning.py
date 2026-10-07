@@ -1,5 +1,5 @@
 import re
-from urllib.parse import urljoin
+from urllib.parse import urlparse
 
 
 def clean_text(value):
@@ -114,5 +114,11 @@ def normalize_url(value):
     if text.startswith("//"):
         text = "https:" + text
     if "://" not in text:
-        return "https://" + text.lstrip("/")
+        if "." not in text and "/" not in text:
+            return ""
+        text = "https://" + text.lstrip("/")
+
+    parsed = urlparse(text)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
     return text
