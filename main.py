@@ -123,20 +123,21 @@ def main():
     }
 
     cleaned_by_source = {}
-    rejected_by_source = {}
+    rejected_by_reason = {reason: 0 for reason in REASONS}
     all_valid_records = []
 
     for source_name in ["books", "quotes"]:
         valid_records, source_rejections = collect_valid_records(source_name, raw_data.get(source_name, []), logger)
         cleaned_by_source[source_name] = len(valid_records)
-        rejected_by_source[source_name] = source_rejections
+        for reason, count in source_rejections.items():
+            rejected_by_reason[reason] += count
         all_valid_records.extend(valid_records)
 
     unique_records, duplicates_removed = deduplicate_records(all_valid_records)
     write_dataset(unique_records, OUTPUT_DIR / "final_dataset.csv")
 
     raw_total = sum(len(raw_data.get(source_name, [])) for source_name in ["books", "quotes"])
-    rejected_total = sum(sum(rejections.values()) for rejections in rejected_by_source.values())
+    rejected_total = sum(rejected_by_reason.values())
     final_total = len(unique_records)
 
     if raw_total - rejected_total - duplicates_removed != final_total:
@@ -145,7 +146,7 @@ def main():
     summary = build_summary(
         raw_counts={source_name: len(raw_data.get(source_name, [])) for source_name in ["books", "quotes"]},
         cleaned_counts=cleaned_by_source,
-        rejected_counts=rejected_by_source,
+        rejected_counts=rejected_by_reason,
         duplicates_removed=duplicates_removed,
         final_count=final_total,
         start_time=start_time,
